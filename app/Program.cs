@@ -3,33 +3,36 @@
 //  <date>2025-03-08</date>
 //-----------------------------------------------------------------------
 
+using Vlc.DotNet.Core;
+
 namespace app
 {
-    using Vlc.DotNet.Core;
-
     public class Program
     {
+        private static VlcMediaPlayer player;
+
         public static void Main(string[] args)
         {
+            var info = new DirectoryInfo(@"C:\Program Files\VideoLAN\VLC");
+            player = new VlcMediaPlayer(info);
+
             var builder = WebApplication.CreateBuilder(args);
             var app = builder.Build();
 
-            app.MapGet("/", () => "Hello World!");
+            app.MapGet("/", () => Results.File(@"index.html", contentType: "text/html"));
 
-            DirectoryInfo info = new(@"C:\Program Files\VideoLAN\VLC");
+            app.MapGet("/play", () =>
+            {
+                var file = new FileInfo(@"d:\music\my.flac");
+                player.Play(file);
+            });
 
-            var file = new FileInfo(@"d:\music\my.flac");
-
-            var player = new VlcMediaPlayer(info);
-            player.EncounteredError += Player_EncounteredError;
-
-            player.Play(file);
+            app.MapGet("/stop", () =>
+            {
+                player.Stop();
+            });
 
             app.Run();
-        }
-
-        private static void Player_EncounteredError(object? sender, VlcMediaPlayerEncounteredErrorEventArgs e)
-        {
         }
     }
 }

@@ -1,0 +1,22 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+</head>
+<body>
+    Player
+
+    <button id="play">Play</button>
+    <button id="stop">Stop</button>
+
+    <script type="text/javascript">
+        document.getElementById('play').onclick = async function (ev) {
+            await fetch('/play')
+        }
+        document.getElementById('stop').onclick = async function (ev) {
+            await fetch('/stop')
+        }
+    </script>
+</body>
+</html>
