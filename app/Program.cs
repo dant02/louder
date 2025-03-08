@@ -3,18 +3,23 @@
 //  <date>2025-03-08</date>
 //-----------------------------------------------------------------------
 
-using Vlc.DotNet.Core;
+using System.Runtime.InteropServices;
+using LibVLCSharp.Shared;
 
 namespace app
 {
     public class Program
     {
-        private static VlcMediaPlayer player;
+        private static LibVLC libvlc = new LibVLC();
+        private static MediaPlayer player = new MediaPlayer(libvlc);
 
         public static void Main(string[] args)
         {
-            var info = new DirectoryInfo(@"C:\Program Files\VideoLAN\VLC");
-            player = new VlcMediaPlayer(info);
+            string bin = @"C:\Program Files\VideoLAN\VLC";
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                bin = "/usr/bin/vlc";
+
+            Core.Initialize(bin);
 
             var builder = WebApplication.CreateBuilder(args);
             var app = builder.Build();
@@ -23,8 +28,8 @@ namespace app
 
             app.MapGet("/play", () =>
             {
-                var file = new FileInfo(@"d:\music\my.flac");
-                player.Play(file);
+                var media = new Media(libvlc, new Uri(@"d:\music\my.flac"));
+                player.Play(media);
             });
 
             app.MapGet("/stop", () =>
