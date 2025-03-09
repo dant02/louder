@@ -23,7 +23,10 @@ namespace app
             }
 
             libvlc = new LibVLC("--verbose=2");
-            player = new MediaPlayer(libvlc);
+            player = new MediaPlayer(libvlc)
+            {
+                Volume = 100,
+            };
 
             var builder = WebApplication.CreateBuilder(args);
             var app = builder.Build();
@@ -39,6 +42,11 @@ namespace app
             app.MapGet("/stop", () =>
             {
                 player.Stop();
+            });
+
+            app.MapPost("/volume/{volume}", (int volume) =>
+            {
+                player.Volume = volume;
             });
 
             app.Run();

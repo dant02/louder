@@ -10,6 +10,8 @@
     <button id="play">Play</button>
     <button id="stop">Stop</button>
 
+    <input type="range" min="1" max="100" value="100" class="slider" id="volumeSlider">
+
     <script type="text/javascript">
         document.getElementById('play').onclick = async function (ev) {
             await fetch('/play')
@@ -17,6 +19,9 @@
         document.getElementById('stop').onclick = async function (ev) {
             await fetch('/stop')
         }
+        document.getElementById("volumeSlider").oninput = async function (ev) {
+            await fetch('/volume/' + this.value, { method: 'POST' })
+        } 
     </script>
 </body>
 </html>
