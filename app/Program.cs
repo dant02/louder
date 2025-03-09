@@ -10,16 +10,20 @@ namespace app
 {
     public class Program
     {
-        private static LibVLC libvlc = new LibVLC();
-        private static MediaPlayer player = new MediaPlayer(libvlc);
+        private static LibVLC? libvlc;
+        private static MediaPlayer? player;
 
         public static void Main(string[] args)
         {
-            string bin = @"C:\Program Files\VideoLAN\VLC";
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                bin = "/usr/bin/vlc";
+            var sound = @"/home/my.flac";
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                Core.Initialize(@"C:\Program Files\VideoLAN\VLC");
+                sound = @"d:\music\my.flac";
+            }
 
-            Core.Initialize(bin);
+            libvlc = new LibVLC("--verbose=2");
+            player = new MediaPlayer(libvlc);
 
             var builder = WebApplication.CreateBuilder(args);
             var app = builder.Build();
@@ -28,7 +32,7 @@ namespace app
 
             app.MapGet("/play", () =>
             {
-                var media = new Media(libvlc, new Uri(@"d:\music\my.flac"));
+                var media = new Media(libvlc, new Uri(sound));
                 player.Play(media);
             });
 
