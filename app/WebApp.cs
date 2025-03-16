@@ -14,8 +14,10 @@ namespace app
         private readonly LibVLC libvlc;
         private readonly string? mediaPath;
         private readonly MediaPlayer player;
+        private bool autoplay = true;
         private Media? currentMedia;
         private int currentMediaIndex;
+        private Timer? timer;
 
         public WebApp(string[] args)
         {
@@ -39,9 +41,11 @@ namespace app
             app = builder.Build();
 
             app.MapGet("/", () => Results.File(@"index.html", contentType: "text/html"));
-            app.MapGet("/play", Play);
-            app.MapGet("/stop", Stop);
+            app.MapGet("/status", GetStatus);
+            app.MapPost("/play", Play);
+            app.MapPost("/stop", Stop);
             app.MapPost("/volume/{volume}", SetVolume);
+            app.MapPost("/autoplay/{isChecked}", AutoPlay);
         }
 
         public void Dispose()
@@ -52,42 +56,82 @@ namespace app
 
         public void Run() => app.Run();
 
+        private void AutoPlay(bool isChecked)
+        {
+            lock (this)
+                autoplay = isChecked;
+        }
+
         private void EndOfMedia()
         {
-            currentMedia?.Dispose();
-            currentMedia = null;
-            currentMediaIndex++;
+            lock (this)
+            {
+                currentMedia?.Dispose();
+                currentMedia = null;
+                currentMediaIndex++;
+            }
+        }
+
+        private Status GetStatus()
+        {
+            lock (this)
+            {
+                return new Status()
+                {
+                    IsPlaying = currentMedia != null,
+                    FileName = currentMedia?.Mrl ?? string.Empty
+                };
+            }
         }
 
         private void Play()
         {
-            if (mediaPath == null)
-                return;
+            lock (this)
+            {
+                if (mediaPath == null)
+                    return;
 
-            var files = Directory.EnumerateFiles(mediaPath);
-            var cnt = files.Count();
-            if (cnt == 0)
-                return;
+                var files = Directory.EnumerateFiles(mediaPath);
+                var cnt = files.Count();
+                if (cnt == 0)
+                    return;
 
-            if (cnt <= currentMediaIndex)
-                currentMediaIndex = 0;
+                if (cnt <= currentMediaIndex)
+                    currentMediaIndex = 0;
 
-            var file = files.ElementAt(currentMediaIndex);
-            currentMedia = new Media(libvlc, new Uri(file));
-            player.Play(currentMedia);
+                var file = files.ElementAt(currentMediaIndex);
+                currentMedia = new Media(libvlc, new Uri(file));
+                player.Play(currentMedia);
+            }
         }
 
         private void Player_EndReached(object? sender, EventArgs e)
         {
-            EndOfMedia();
+            lock (this)
+            {
+                EndOfMedia();
+
+                if (autoplay)
+                {
+                    timer?.Dispose();
+                    timer = new Timer((state) => Play(), null, 1, Timeout.Infinite);
+                }
+            }
         }
 
-        private void SetVolume(int volume) => player.Volume = volume;
+        private void SetVolume(int volume)
+        {
+            lock (this)
+                player.Volume = volume;
+        }
 
         private void Stop()
         {
-            player.Stop();
-            EndOfMedia();
+            lock (this)
+            {
+                player.Stop();
+                EndOfMedia();
+            }
         }
     }
 }
