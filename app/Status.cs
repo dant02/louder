@@ -7,6 +7,7 @@ namespace app
 {
     public class Status
     {
+        public int CurrentIndex { get; set; }
         public string? FileName { get; set; }
         public bool IsPlaying { get; set; }
     }

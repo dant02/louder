@@ -44,6 +44,7 @@ namespace app
             app.MapGet("/status", GetStatus);
             app.MapPost("/play", Play);
             app.MapPost("/stop", Stop);
+            app.MapPost("/reset", Reset);
             app.MapPost("/volume/{volume}", SetVolume);
             app.MapPost("/autoplay/{isChecked}", AutoPlay);
         }
@@ -79,7 +80,8 @@ namespace app
                 return new Status()
                 {
                     IsPlaying = currentMedia != null,
-                    FileName = currentMedia?.Mrl ?? string.Empty
+                    FileName = currentMedia?.Mrl ?? string.Empty,
+                    CurrentIndex = currentMediaIndex
                 };
             }
         }
@@ -91,16 +93,17 @@ namespace app
                 if (mediaPath == null)
                     return;
 
-                var files = Directory.EnumerateFiles(mediaPath);
-                var cnt = files.Count();
+                var enumerator = Directory.EnumerateFiles(mediaPath);
+                var cnt = enumerator.Count();
                 if (cnt == 0)
                     return;
 
                 if (cnt <= currentMediaIndex)
                     currentMediaIndex = 0;
 
-                var file = files.ElementAt(currentMediaIndex);
-                currentMedia = new Media(libvlc, new Uri(file));
+                var files = enumerator.ToList();
+                files.Sort();
+                currentMedia = new Media(libvlc, new Uri(files[currentMediaIndex]));
                 player.Play(currentMedia);
             }
         }
@@ -116,6 +119,15 @@ namespace app
                     timer?.Dispose();
                     timer = new Timer((state) => Play(), null, 1, Timeout.Infinite);
                 }
+            }
+        }
+
+        private void Reset()
+        {
+            lock (this)
+            {
+                Stop();
+                currentMediaIndex = 0;
             }
         }
 

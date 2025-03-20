@@ -1,7 +1,13 @@
-﻿<!DOCTYPE html>
+﻿<!-----------------------------------------------------------------------
+  <author>https://github.com/dant02</author>
+  <date>2025-03-08</date>
+------------------------------------------------------------------------->
+
+<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title></title>
 </head>
 <body>
@@ -9,6 +15,7 @@
 
     <button id="play">Play</button>
     <button id="stop">Stop</button>
+    <button id="reset">Reset</button>
     <hr />
 
     <input type="range" min="1" max="100" value="20" class="slider" id="volumeSlider" />
@@ -21,6 +28,11 @@
     <label for="playStatus">Is playing</label>
     <input type="checkbox" disabled id="playStatus" />
 
+    <hr />
+
+    <label for="currentIndex">Media index</label>
+    <span id="currentIndex"></span>
+
     <script type="text/javascript">
         document.getElementById('play').onclick = async function (ev) {
             await fetch('/play', { method: 'POST' })
@@ -28,6 +40,10 @@
         document.getElementById('stop').onclick = async function (ev) {
             await fetch('/stop', { method: 'POST' })
         }
+        document.getElementById('reset').onclick = async function (ev) {
+            await fetch('/reset', { method: 'POST' })
+        }
+
         document.getElementById("volumeSlider").oninput = async function (ev) {
             await fetch('/volume/' + this.value, { method: 'POST' })
         }
@@ -43,15 +59,19 @@
             await fetch('/status?' + new Date().toISOString())
                 .then(async result => {
 
-                    let el = document.getElementById('playStatus');
+                    let stateEl = document.getElementById('playStatus');
+                    let indexEl = document.getElementById('currentIndex');
                     try {
                         let data = await result.json();
 
-                        el.checked = data.isPlaying;
-                        el.indeterminate = false;
+                        stateEl.checked = data.isPlaying;
+                        stateEl.indeterminate = false;
+
+                        indexEl.innerText = data.currentIndex
                     }
                     catch {
-                        el.indeterminate = true;
+                        stateEl.indeterminate = true;
+                        indexEl.innerText = '-';
                     }
 
                     timeout = setTimeout(GetStatus, 1000);
